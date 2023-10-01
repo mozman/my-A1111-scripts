@@ -5,7 +5,7 @@ import pathlib
 import requests
 import dataclasses
 
-# API help page: https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/API
+
 SCRIPT_OUTPUT = pathlib.Path("../my-output")
 PORT = 7860
 LOCALHOST = "127.0.0.1"
@@ -13,35 +13,34 @@ URL = f"http://{LOCALHOST}:{PORT}"
 API_V1 = URL + "/sdapi/v1/"
 
 
+# API help page: https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/API
+# Show API docs: http://127.0.0.1:7860/docs
 class API:
-    TXT2IMG = API_V1 + "txt2img"
+    APP_ID = API_V1 + "app_id"
     IMG2IMG = API_V1 + "img2img"
+    SD_MODELS = API_V1 + "sd-models"
+    TXT2IMG = API_V1 + "txt2img"
 
 
 class Samplers:
-    DPMPP_2M_KARRAS = "DPM++ 2M Karras"
-    DPMPP_SDE_KARRAS = "DPM++ SDE Karras"
-    DPMPP_2M_SDE_KARRAS = "DPM++ 2M SDE Karras"
-    DPMPP_2M_SDE_KARRAS_EXP = "DPM++ 2M SDE Exponential"
-    EULER = "Euler"
-    EULER_A = "Euler a"
-    DPMPP_2S_A = "DPM++ 2S a"
     DPMPP_2M = "DPM++ 2M"
-    DPMPP_SDE = "DPM++ SDE"
+    DPMPP_2M_KARRAS = "DPM++ 2M Karras"
     DPMPP_2M_SDE = "DPM++ 2M SDE"
     DPMPP_2M_SDE_HEUN = "DPM++ 2M SDE Heun"
-    DPMPP_2M_SDE_HEUN_KARRAS = "DPM++ 2M SDE Heun Karras"
     DPMPP_2M_SDE_HEUN_EXP = "DPM++ 2M SDE Heun Exponential"
-    DPMPP_3M_SDE = "DPM++ 3M SDE"
-    DPMPP_3M_SDE_KARRAS = "DPM++ 3M SDE Karras"
-    DPMPP_3M_SDE_EXP = "DPM++ 3M SDE Exponential"
+    DPMPP_2M_SDE_HEUN_KARRAS = "DPM++ 2M SDE Heun Karras"
+    DPMPP_2M_SDE_KARRAS = "DPM++ 2M SDE Karras"
+    DPMPP_2M_SDE_KARRAS_EXP = "DPM++ 2M SDE Exponential"
+    DPMPP_2S_A = "DPM++ 2S a"
     DPMPP_2S_A_KARRAS = "DPM++ 2S a Karras"
+    DPMPP_3M_SDE = "DPM++ 3M SDE"
+    DPMPP_3M_SDE_EXP = "DPM++ 3M SDE Exponential"
+    DPMPP_3M_SDE_KARRAS = "DPM++ 3M SDE Karras"
+    DPMPP_SDE = "DPM++ SDE"
+    DPMPP_SDE_KARRAS = "DPM++ SDE Karras"
+    EULER = "Euler"
+    EULER_A = "Euler a"
     UniPC = "UniPC"
-
-
-# show docs: URL/docs
-# show txt2img docs: URL/sdapi/v1/txt2img
-# show imp2img docs: URL/sdapi/v1/img2img
 
 
 @dataclasses.dataclass
@@ -89,7 +88,7 @@ class Payload:
 
 def is_server_alive() -> bool:
     try:
-        respond = requests.get(url=f"{URL}/app_id")
+        respond = requests.get(url=API.APP_ID)
     except requests.ConnectionError:
         return False
     return respond.status_code == 200
@@ -124,7 +123,7 @@ class Config:
         self.query_checkpoints()
 
     def query_checkpoints(self) -> None:
-        response = requests.get(url=f"{API_V1}sd-models")
+        response = requests.get(url=API.SD_MODELS)
         self.checkpoints.clear()
         self.checkpoints.extend(Checkpoint.from_dict(d) for d in response.json())
 
