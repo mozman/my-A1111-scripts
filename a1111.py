@@ -48,7 +48,7 @@ class Samplers:
 class OverrideSettings:
     sd_model_checkpoint: str = ""  # checkpoint_title
 
-    def todict(self) -> dict[str, str | int]:
+    def to_dict(self) -> dict[str, str | int]:
         return {"sd_model_checkpoint": self.sd_model_checkpoint}
 
 
@@ -69,7 +69,7 @@ class Payload:
     def override(self, data: OverrideSettings):
         self._override = data
 
-    def todict(self) -> dict[str, str | int]:
+    def to_dict(self) -> dict[str, str | int]:
         data = {
             "prompt": self.prompt,
             "negative_prompt": self.negative_prompt,
@@ -83,7 +83,7 @@ class Payload:
             "seed": self.seed,
         }
         if self._override:
-            data["override_settings"] = self._override.todict()
+            data["override_settings"] = self._override.to_dict()
         return data
 
 
@@ -120,7 +120,7 @@ class Config:
     def __init__(self) -> None:
         self.checkpoints: list[Checkpoint] = []
 
-    def setup(self) -> None:
+    def load(self) -> None:
         self.query_checkpoints()
 
     def query_checkpoints(self) -> None:

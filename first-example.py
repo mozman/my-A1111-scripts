@@ -35,7 +35,7 @@ def main(config: a1111.Config, batch_size: int):
         )
 
     try:
-        response = requests.post(url=a1111.API.TXT2IMG, json=payload.todict())
+        response = requests.post(url=a1111.API.TXT2IMG, json=payload.to_dict())
     except requests.ConnectionError:
         print("A1111 does not respond")
         return
@@ -49,7 +49,7 @@ def main(config: a1111.Config, batch_size: int):
 if __name__ == "__main__":
     if a1111.is_server_alive():
         _config = a1111.Config()
-        _config.setup()
+        _config.load()
         main(_config, 3)
     else:
         print("A1111 server not found")
