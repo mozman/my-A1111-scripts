@@ -13,7 +13,10 @@ CKPT_TEST = "ckpt-test"
 
 # Check Issues:
 # https://civitai.com/articles/260/can-we-identify-most-stable-diffusion-model-issues-with-just-a-few-circles
-COMMON_NEG = "ugly, old, mutation, low quality, doll, long neck, text, signature, artist name, bad anatomy, poorly drawn, malformed, deformed, blurry, out of focus, noise, dust"
+COMMON_NEG = (
+    "ugly, old, mutation, low quality, doll, long neck, text, signature, artist "
+    "name, bad anatomy, poorly drawn, malformed, deformed, blurry, out of focus, noise, dust"
+)
 TESTS = {
     "jenifer_lawrence": [
         "photo of (Jennifer Lawrence:0.9) beautiful young professional photo high quality highres makeup",
@@ -32,7 +35,8 @@ TESTS = {
         COMMON_NEG,
     ],
     "circle": [
-        "minimalism simple illustration vector art style clean single black circle inside white rectangle symmetric shape sharp professional print quality highres high contrast black and white",
+        "minimalism simple illustration vector art style clean single black circle inside "
+        "white rectangle symmetric shape sharp professional print quality highres high contrast black and white",
         COMMON_NEG,
     ],
     "man_photo": [
@@ -64,7 +68,7 @@ def image_grid(
     return grid
 
 
-def make_images(images: list[str]) -> Iterator[Image]:
+def decode_images(images: list[str]) -> Iterator[Image]:
     return (Image.open(io.BytesIO(base64.b64decode(image))) for image in images)
 
 
@@ -77,7 +81,7 @@ def run_test(
     png_name = folder / f"{checkpoint.model_name}-{name}.png"
     if png_name.exists():
         print(
-            f"skipping test for checkpoint: {checkpoint.model_name}, test file already exist"
+            f"skipping test for checkpoint: {checkpoint.model_name}, testfile already exist"
         )
         return
 
@@ -106,7 +110,7 @@ def run_test(
         data = response.json()
         images: list[str] = data["images"]
         grid = image_grid(
-            make_images(images),
+            decode_images(images),
             tile_size=(payload.width, payload.height),
             grid_size=(3, 3),
         )
@@ -125,7 +129,7 @@ def main(config: a1111.Config, *, tests: list[str]):
             continue
         print(f"\nLaunching checkpoint test: {name}")
         print(f"prompt: {prompt}")
-        print("-"*79)
+        print("-" * 79)
         for checkpoint in config.checkpoints:
             if "refiner" in checkpoint.model_name.lower():
                 continue
@@ -143,4 +147,4 @@ if __name__ == "__main__":
         _config.load()
         main(_config, tests=["circle"])
     else:
-        print("A1111 server not found")
+        print("A1111 server not running")
