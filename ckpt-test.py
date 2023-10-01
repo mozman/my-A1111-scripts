@@ -5,6 +5,8 @@ from typing import Iterator, Iterable
 import requests
 import io
 import base64
+import argparse
+
 from PIL import Image
 
 import a1111
@@ -43,9 +45,13 @@ TESTS = {
         "photo of man standing full body beautiful young professional photo high quality highres",
         COMMON_NEG,
     ],
+    # basic prompts to see how varinat a checkpoint is
     "woman": ["woman", ""],
     "man": ["man", ""],
+    "city": ["city streets", ""],
 }
+
+EXECUTE = ["streets"]
 
 
 def image_grid(
@@ -100,12 +106,7 @@ def run_test(
         payload.height = 1024
     payload.override(a1111.OverrideSettings(sd_model_checkpoint=checkpoint.model_name))
 
-    try:
-        response = requests.post(url=a1111.API.TXT2IMG, json=payload.to_dict())
-    except requests.ConnectionError:
-        print("A1111 does not respond")
-        return
-
+    response = requests.post(url=a1111.API.TXT2IMG, json=payload.to_dict())
     if response.status_code == 200:
         data = response.json()
         images: list[str] = data["images"]
@@ -133,18 +134,37 @@ def main(config: a1111.Config, *, tests: list[str]):
         for checkpoint in config.checkpoints:
             if "refiner" in checkpoint.model_name.lower():
                 continue
-            try:
-                run_test(
-                    name, checkpoint, prompt=prompt, negative_prompt=negative_prompt
-                )
-            except requests.ConnectionError:
-                print("A1111 does not respond")
+            run_test(name, checkpoint, prompt=prompt, negative_prompt=negative_prompt)
+
+
+def parse_options():
+    parser = argparse.ArgumentParser(
+        prog=CKPT_TEST,
+        description="Automatic1111 checkpoint tester",
+    )
+    parser.add_argument("tests", nargs="*", help="tests to execute")
+    parser.add_argument(
+        "-p",
+        "--print_all",
+        action="store_true",
+        help="print all available tests and exist",
+    )
+    return parser.parse_args()
 
 
 if __name__ == "__main__":
-    if a1111.is_server_alive():
+    options = parse_options()
+    if options.print_all:
+        for key in TESTS.keys():
+            print(key)
+        exit()
+    tests = options.tests
+    if not tests:
+        tests = EXECUTE
+    print(f"executing: {tests}")
+    try:
         _config = a1111.Config()
         _config.load()
-        main(_config, tests=["circle"])
-    else:
-        print("A1111 server not running")
+        main(_config, tests=tests)
+    except requests.ConnectionError:
+        print("A1111 does not respond")
