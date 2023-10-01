@@ -45,13 +45,13 @@ TESTS = {
         "photo of man standing full body beautiful young professional photo high quality highres",
         COMMON_NEG,
     ],
-    # basic prompts to see how varinat a checkpoint is
+    # basic prompts to see how variant a checkpoint is
     "woman": ["woman", ""],
     "man": ["man", ""],
     "city": ["city streets", ""],
 }
 
-EXECUTE = ["streets"]
+DEFAULT = ["circle"]
 
 
 def image_grid(
@@ -160,7 +160,7 @@ if __name__ == "__main__":
         exit()
     tests = options.tests
     if not tests:
-        tests = EXECUTE
+        tests = DEFAULT
     print(f"executing: {tests}")
     try:
         _config = a1111.Config()
