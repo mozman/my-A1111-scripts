@@ -54,8 +54,10 @@ class OverrideSettings:
 
 @dataclasses.dataclass
 class Payload:
-    prompt: str = "woman"
+    prompt: str = ""
+    negative_prompt: str = ""
     sampler_name: str = Samplers.DPMPP_2M_KARRAS
+    batch_count: int = 1
     batch_size: int = 1
     steps: int = 20
     cfg_scale: int = 7
@@ -70,8 +72,10 @@ class Payload:
     def todict(self) -> dict[str, str | int]:
         data = {
             "prompt": self.prompt,
+            "negative_prompt": self.negative_prompt,
             "sampler_name": self.sampler_name,
             "batch_size": self.batch_size,
+            "n_iter": self.batch_count,
             "steps": self.steps,
             "cfg_scale": self.cfg_scale,
             "width": self.width,
@@ -103,9 +107,11 @@ class Checkpoint:
             model_name=data.get("model_name", ""),
         )
 
+    @property
     def is_sd15(self) -> bool:
         return self.model_name.startswith("SD15")
 
+    @property
     def is_sdxl(self) -> bool:
         return self.model_name.startswith("SDXL")
 
