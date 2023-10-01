@@ -124,13 +124,9 @@ class Config:
         self.query_checkpoints()
 
     def query_checkpoints(self) -> None:
-        try:
-            response = requests.get(url=f"{API_V1}sd-models")
-        except requests.ConnectionError:
-            print("HTTP connection error")
-        else:
-            self.checkpoints.clear()
-            self.checkpoints.extend(Checkpoint.from_dict(d) for d in response.json())
+        response = requests.get(url=f"{API_V1}sd-models")
+        self.checkpoints.clear()
+        self.checkpoints.extend(Checkpoint.from_dict(d) for d in response.json())
 
     def find_checkpoint(self, name: str) -> Checkpoint | None:
         name = name.lower()
