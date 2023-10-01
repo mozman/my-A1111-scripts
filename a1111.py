@@ -3,97 +3,132 @@
 from __future__ import annotations
 import pathlib
 import requests
+import dataclasses
 
+# API help page: https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/API
 SCRIPT_OUTPUT = pathlib.Path("../my-output")
-URL = "http://127.0.0.1:7860"
-URL_API = URL + "/sdapi/v1/"
+PORT = 7860
+LOCALHOST = "127.0.0.1"
+URL = f"http://{LOCALHOST}:{PORT}"
+API_V1 = URL + "/sdapi/v1/"
+
+
+class API:
+    TXT2IMG = API_V1 + "txt2img"
+    IMG2IMG = API_V1 + "img2img"
+
+
+class Samplers:
+    DPMPP_2M_KARRAS = "DPM++ 2M Karras"
+    DPMPP_SDE_KARRAS = "DPM++ SDE Karras"
+    DPMPP_2M_SDE_KARRAS = "DPM++ 2M SDE Karras"
+    DPMPP_2M_SDE_KARRAS_EXP = "DPM++ 2M SDE Exponential"
+    EULER = "Euler"
+    EULER_A = "Euler a"
+    DPMPP_2S_A = "DPM++ 2S a"
+    DPMPP_2M = "DPM++ 2M"
+    DPMPP_SDE = "DPM++ SDE"
+    DPMPP_2M_SDE = "DPM++ 2M SDE"
+    DPMPP_2M_SDE_HEUN = "DPM++ 2M SDE Heun"
+    DPMPP_2M_SDE_HEUN_KARRAS = "DPM++ 2M SDE Heun Karras"
+    DPMPP_2M_SDE_HEUN_EXP = "DPM++ 2M SDE Heun Exponential"
+    DPMPP_3M_SDE = "DPM++ 3M SDE"
+    DPMPP_3M_SDE_KARRAS = "DPM++ 3M SDE Karras"
+    DPMPP_3M_SDE_EXP = "DPM++ 3M SDE Exponential"
+    DPMPP_2S_A_KARRAS = "DPM++ 2S a Karras"
+    UniPC = "UniPC"
+
 
 # show docs: URL/docs
-TXT2IMG_PAYLOAD_DEFAULT = {
-    "prompt": "",
-    "negative_prompt": "",
-    "styles": tuple(),
-    "seed": -1,
-    "subseed": -1,
-    "subseed_strength": 0,
-    "seed_resize_from_h": -1,
-    "seed_resize_from_w": -1,
-    "sampler_name": "string",
-    "batch_size": 1,
-    "n_iter": 1,
-    "steps": 20,
-    "cfg_scale": 7,
-    "width": 512,
-    "height": 512,
-    "restore_faces": False,
-    "tiling": False,
-    "do_not_save_samples": False,
-    "do_not_save_grid": False,
-    "eta": 0,
-    "denoising_strength": 0,
-    "s_min_uncond": 0,
-    "s_churn": 0,
-    "s_tmax": 0,
-    "s_tmin": 0,
-    "s_noise": 0,
-    "override_settings": {},
-    "override_settings_restore_afterwards": True,
-    "refiner_checkpoint": "",
-    "refiner_switch_at": 0,
-    "disable_extra_networks": False,
-    "comments": {},
-    "enable_hr": False,
-    "firstphase_width": 0,
-    "firstphase_height": 0,
-    "hr_scale": 2,
-    "hr_upscaler": "string",
-    "hr_second_pass_steps": 0,
-    "hr_resize_x": 0,
-    "hr_resize_y": 0,
-    "hr_checkpoint_name": "string",
-    "hr_sampler_name": "string",
-    "hr_prompt": "",
-    "hr_negative_prompt": "",
-    "sampler_index": "Euler",
-    "script_name": "string",
-    "script_args": [],
-    "send_images": True,
-    "save_images": False,
-    "alwayson_scripts": {},
-}
+# show txt2img docs: URL/sdapi/v1/txt2img
+# show imp2img docs: URL/sdapi/v1/img2img
 
 
-OVERRIDE_SETTINGS_EXAMPLE = {
-    "sd_model_checkpoint": "checkpoint_title",
-}
+@dataclasses.dataclass
+class OverrideSettings:
+    sd_model_checkpoint: str = ""  # checkpoint_title
+
+    def todict(self) -> dict[str, str | int]:
+        return {"sd_model_checkpoint": self.sd_model_checkpoint}
+
+
+@dataclasses.dataclass
+class Payload:
+    prompt: str = "woman"
+    sampler_name: str = Samplers.DPMPP_2M_KARRAS
+    batch_size: int = 1
+    steps: int = 20
+    cfg_scale: int = 7
+    width: int = 512
+    height: int = 512
+    seed: int = 1
+    _override: OverrideSettings | None = None
+
+    def override(self, data: OverrideSettings):
+        self._override = data
+
+    def todict(self) -> dict[str, str | int]:
+        data = {
+            "prompt": self.prompt,
+            "sampler_name": self.sampler_name,
+            "batch_size": self.batch_size,
+            "steps": self.steps,
+            "cfg_scale": self.cfg_scale,
+            "width": self.width,
+            "height": self.height,
+            "seed": self.seed,
+        }
+        if self._override:
+            data["override_settings"] = self._override.todict()
+        return data
 
 
 def is_server_alive() -> bool:
     try:
-        requests.get(url=f"{URL}/docs")
+        respond = requests.get(url=f"{URL}/app_id")
     except requests.ConnectionError:
         return False
-    return True
+    return respond.status_code == 200
+
+
+@dataclasses.dataclass
+class Checkpoint:
+    title: str = ""
+    model_name: str = ""
+
+    @classmethod
+    def from_dict(cls, data: dict) -> Checkpoint:
+        return cls(
+            title=data.get("title", ""),
+            model_name=data.get("model_name", ""),
+        )
+
+    def is_sd15(self) -> bool:
+        return self.model_name.startswith("SD15")
+
+    def is_sdxl(self) -> bool:
+        return self.model_name.startswith("SDXL")
 
 
 class Config:
     def __init__(self) -> None:
-        self.checkpoints: list[dict] = []
+        self.checkpoints: list[Checkpoint] = []
 
     def setup(self) -> None:
         self.query_checkpoints()
 
     def query_checkpoints(self) -> None:
         try:
-            response = requests.get(url=f"{URL_API}sd-models")
+            response = requests.get(url=f"{API_V1}sd-models")
         except requests.ConnectionError:
             print("HTTP connection error")
         else:
             self.checkpoints.clear()
-            self.checkpoints.extend(response.json())
+            self.checkpoints.extend(Checkpoint.from_dict(d) for d in response.json())
 
-    def get_checkpoint_title(self, name: str) -> str:
+    def find_checkpoint(self, name: str) -> Checkpoint | None:
+        name = name.lower()
         for model in self.checkpoints:
-            if name in model.get("model_name", ""):
-                return model.get("title", "")
-        return ""
+            if name in model.model_name.lower():
+                return model
+        return None
