@@ -51,8 +51,6 @@ TESTS = {
     "city": ["city streets", ""],
 }
 
-DEFAULT = ["circle"]
-
 
 def image_grid(
     images: Iterable[Image],
@@ -147,7 +145,7 @@ def parse_options():
         "-p",
         "--print_all",
         action="store_true",
-        help="print all available tests and exist",
+        help="print all available tests and exit",
     )
     return parser.parse_args()
 
@@ -160,7 +158,8 @@ if __name__ == "__main__":
         exit()
     tests = options.tests
     if not tests:
-        tests = DEFAULT
+        # TEST_SUBSET = ["woman", "man", "city"]
+        tests = list(TESTS.keys())  # run all tests
     print(f"executing: {tests}")
     try:
         _config = a1111.Config()
